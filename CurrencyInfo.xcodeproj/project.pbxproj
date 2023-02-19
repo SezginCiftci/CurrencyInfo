@@ -20,11 +20,11 @@
 		C44728DF299C2C7D00D22687 /* CriteriaViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C44728DE299C2C7D00D22687 /* CriteriaViewController.swift */; };
 		C46895DB299FE273009B6B65 /* CriteriaTableCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = C46895DA299FE273009B6B65 /* CriteriaTableCell.swift */; };
 		C4A856ED29A0EF4500D80B35 /* UIViewController+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4A856EC29A0EF4500D80B35 /* UIViewController+Extension.swift */; };
-		C4A856EF29A0EFD100D80B35 /* Optional+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4A856EE29A0EFD100D80B35 /* Optional+Extension.swift */; };
 		C4A856F429A1558000D80B35 /* ListDetail.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4A856F329A1558000D80B35 /* ListDetail.swift */; };
 		C4A856F629A1561400D80B35 /* UITableView+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4A856F529A1561400D80B35 /* UITableView+Extension.swift */; };
 		C4A856F829A1644E00D80B35 /* String+Extension.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4A856F729A1644E00D80B35 /* String+Extension.swift */; };
 		C4B4B87A29A2840D00A749C5 /* MainViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4B4B87929A2840D00A749C5 /* MainViewModel.swift */; };
+		C4B4B87E29A2A43F00A749C5 /* DummyJson.swift in Sources */ = {isa = PBXBuildFile; fileRef = C4B4B87D29A2A43F00A749C5 /* DummyJson.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -43,11 +43,11 @@
 		C44728DE299C2C7D00D22687 /* CriteriaViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CriteriaViewController.swift; sourceTree = "<group>"; };
 		C46895DA299FE273009B6B65 /* CriteriaTableCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CriteriaTableCell.swift; sourceTree = "<group>"; };
 		C4A856EC29A0EF4500D80B35 /* UIViewController+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UIViewController+Extension.swift"; sourceTree = "<group>"; };
-		C4A856EE29A0EFD100D80B35 /* Optional+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Optional+Extension.swift"; sourceTree = "<group>"; };
 		C4A856F329A1558000D80B35 /* ListDetail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ListDetail.swift; sourceTree = "<group>"; };
 		C4A856F529A1561400D80B35 /* UITableView+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "UITableView+Extension.swift"; sourceTree = "<group>"; };
 		C4A856F729A1644E00D80B35 /* String+Extension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "String+Extension.swift"; sourceTree = "<group>"; };
 		C4B4B87929A2840D00A749C5 /* MainViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainViewModel.swift; sourceTree = "<group>"; };
+		C4B4B87D29A2A43F00A749C5 /* DummyJson.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DummyJson.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -110,7 +110,6 @@
 				C4A856EC29A0EF4500D80B35 /* UIViewController+Extension.swift */,
 				C4A856F529A1561400D80B35 /* UITableView+Extension.swift */,
 				C4A856F729A1644E00D80B35 /* String+Extension.swift */,
-				C4A856EE29A0EFD100D80B35 /* Optional+Extension.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -119,6 +118,7 @@
 			isa = PBXGroup;
 			children = (
 				C44728D8299C0AAE00D22687 /* WebService.swift */,
+				C4B4B87D29A2A43F00A749C5 /* DummyJson.swift */,
 			);
 			path = Service;
 			sourceTree = "<group>";
@@ -246,7 +246,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				C44728D5299BFD9800D22687 /* MainTableCell.swift in Sources */,
-				C4A856EF29A0EFD100D80B35 /* Optional+Extension.swift in Sources */,
+				C4B4B87E29A2A43F00A749C5 /* DummyJson.swift in Sources */,
 				C4A856ED29A0EF4500D80B35 /* UIViewController+Extension.swift in Sources */,
 				C4A856F429A1558000D80B35 /* ListDetail.swift in Sources */,
 				C44728D9299C0AAE00D22687 /* WebService.swift in Sources */,

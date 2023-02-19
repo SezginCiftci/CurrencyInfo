@@ -14,23 +14,55 @@ enum NetworkError: String, Error {
     case failed = "Network request failed."
     case noData = "Response returned with no data to decode."
     case unableToDecode = "We could not decode the response."
+    case urlError = "Url is wrong!"
 }
 
 struct Resource<T: Codable> {
     let url: URL
 }
 
-struct WebService {
+struct ApiConstants {
+    static let listUrl = "https://sui7963dq6.execute-api.eu-central-1.amazonaws.com/default/ForeksMobileInterviewSettings"
+    static let detailUrl = "https://sui7963dq6.execute-api.eu-central-1.amazonaws.com/default/ForeksMobileInterview?fields=las,"
+    static let stcs = "&stcs="
+}
+
+protocol WebServiceProtocol {
+    func loadListData(criteria: (CriteriaValue, CriteriaValue), completion: @escaping (Result<DefaultList, NetworkError>)->())
+    func loadDetailData(fields: String, selectedStocks: String, completion: @escaping (Result<ListDetail, NetworkError>)->())
+}
+
+struct WebService: WebServiceProtocol {
+    func loadListData(criteria: (CriteriaValue, CriteriaValue), completion: @escaping (Result<DefaultList, NetworkError>)->()) {
+        guard let url = URL(string: ApiConstants.listUrl) else {
+            completion(.failure(.urlError))
+            return
+        }
+        let resource = Resource<DefaultList>(url: url)
+        fetchData(resource: resource) { result in
+            completion(result)
+        }
+    }
     
+    func loadDetailData(fields: String, selectedStocks: String, completion: @escaping (Result<ListDetail, NetworkError>)->()) {
+        guard let url = URL(string: ApiConstants.detailUrl+fields+ApiConstants.stcs+selectedStocks) else {
+            completion(.failure(.urlError))
+            return
+        }
+        let resource = Resource<ListDetail>(url: url)
+        fetchData(resource: resource) { result in
+            completion(result)
+        }
+    }
+}
+
+extension WebService {
     func fetchData<T>(resource: Resource<T>, completion: @escaping (Result<T, NetworkError>) -> ()) {
-        
         URLSession.shared.dataTask(with: resource.url) { data, response, error in
-            
             guard let response = response as? HTTPURLResponse  else {
                 completion(.failure(.failed))
                 return
             }
-            print(response.statusCode)
             guard handleNetworkResponse(response) == nil else {
                 completion(.failure(handleNetworkResponse(response)!))
                 return
@@ -53,108 +85,16 @@ struct WebService {
             
         }.resume()
     }
-    
+}
+
+extension WebService {
     private func handleNetworkResponse(_ response: HTTPURLResponse) -> NetworkError? {
         switch response.statusCode {
         case 200...299: return nil
-        case 401...500: return  .authenticationError
+        case 401...500: return .authenticationError
         case 501...599: return .badRequest
         case 600: return .outdated
         default: return .failed
         }
     }
 }
-
-class DummyJson {
-    static let jsonData = """
-{
-  "l": [
-    {
-        "tke": "XU100.I.BIST",
-        "clo": "18:10:12",
-        "ddi": "18,26",
-        "las": "5.026,83",
-        "pdd": "-0.02",
-        "hig": "34.567",
-        "low": "21.435"
-    },
-    {
-        "tke": "XU050.I.BIST",
-        "clo": "18:10:12",
-        "ddi": "20,17",
-        "las": "4.533,37",
-        "pdd": "-0.02",
-        "hig": "34.567",
-        "low": "21.435"
-    },
-    {
-        "tke": "XU030.I.BIST",
-        "clo": "18:10:10",
-        "ddi": "24,70",
-        "las": "5.635,18",
-        "pdd": "-0.02",
-        "hig": "34.567",
-        "low": "21.435"
-    },
-    {
-        "tke": "USD/TRL",
-        "ddi": "0,0148",
-        "las": "18,8621",
-        "clo": "23:59:44",
-        "pdd": "-0.02",
-        "hig": "34.567",
-        "low": "21.435"
-    },
-    {
-        "tke": "EUR/TRL",
-        "ddi": "0,0248",
-        "las": "20,1738",
-        "clo": "23:59:56",
-        "pdd": "-0.02",
-        "hig": "34.567",
-        "low": "21.435"
-    },
-    {
-        "tke": "EUR/USD",
-        "ddi": "0,00209",
-        "las": "1,06944",
-        "clo": "23:59:58",
-        "pdd": "-0.02",
-        "hig": "34.567",
-        "low": "21.435"
-    },
-    {
-        "tke": "XAU/USD",
-        "ddi": "5,88",
-        "las": "1.841,86",
-        "clo": "23:59:57",
-        "pdd": "-0.02",
-        "hig": "34.567",
-        "low": "21.435"
-    },
-    {
-        "tke": "XGLD",
-        "clo": "23:59:57",
-        "ddi": "3,992",
-        "las": "1.117,060",
-        "pdd": "-0.02",
-        "hig": "34.567",
-        "low": "21.435"
-    },
-    {
-        "tke": "BRENT",
-        "ddi": "-1,99",
-        "las": "83,15",
-        "clo": "01:59:00",
-        "pdd": "-0.02",
-        "hig": "34.567",
-        "low": "21.435"
-    }
-  ],
-  "z": "0"
-}
-""".data(using: .utf8)!
-}
-
-
-

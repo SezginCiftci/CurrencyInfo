@@ -6,93 +6,61 @@
 //
 
 import Foundation
-import UIKit
+
+enum CellImageType {
+    case Up
+    case Down
+    case Nothing
+    
+    var cellImageType: String? {
+        switch self {
+        case .Up:
+            return "up"
+        case .Down:
+            return "down"
+        case .Nothing:
+            return nil
+        }
+    }
+}
 
 final class MainViewModel {
     
+    private let webservice = WebService()
     private var myDefault = [MypageDefault]()
     private var myPage = [Mypage]()
     private var detailModel = [L]()
     private var cellImageTypes = [CellImageType]()
     private var isChanged = [Bool]()
-    private var currentCriteriaFirst = CriteriaValue.Son
-    private var currentCriteriaSecond = CriteriaValue.FarkYuzde
     
-    func loadListData() {
-        guard let url = URL(string: "https://sui7963dq6.execute-api.eu-central-1.amazonaws.com/default/ForeksMobileInterviewSettings") else { return }
-        
-        let resource = Resource<DefaultList>(url: url)
-        print("İstek atıldı...")
-        WebService().fetchData(resource: resource) { result in
+    func loadListData(criteria: (CriteriaValue, CriteriaValue), onSuccess: @escaping ()->(), onError: @escaping (_ errorDescription: String)->()) {
+        webservice.loadListData(criteria: criteria) { result in
             switch result {
             case .success(let data):
-                    self.myDefault = data.mypageDefaults
-                    self.myPage = data.mypage
-                    self.handleDetailRequest(criteria: self.currentCriteriaFirst, self.currentCriteriaSecond)
-            case .failure( _):
-                break
+                self.myDefault = data.mypageDefaults
+                self.myPage = data.mypage
+                self.handleDetailRequest(criteria: criteria.0, criteria.1, onSuccess: onSuccess, onError: onError)
+            case .failure(let error):
+                onError(error.rawValue)
             }
         }
     }
     
-    var defaultListCount: Int {
-        return myDefault.count
-    }
-    
-    func cellForRow(at index: Int) -> MypageDefault {
-        return myDefault[index]
-    }
-    
-    func cellImageType(at index: Int) -> UIImage {
-        return cellImageTypes[index].cellImageType ?? UIImage()
-    }
-    
-    func isCloChanged(at index: Int) -> Bool {
-        return isChanged[index]
-    }
-    
-    func cellForClo(at index: Int) -> String {
-        return detailModel[index].clo ?? ""
-    }
-    
-    
-    
-    private func handleDetailRequest(criteria: CriteriaValue...) {
+    private func handleDetailRequest(criteria: CriteriaValue..., onSuccess: @escaping ()->(), onError: @escaping (_ errorDescription: String)->()) {
         let requestCriteria = criteria.map { $0.criteriaValue ?? "" }.joined(separator: ",")
-        print("Seçili kriterler: \(requestCriteria)")
-        loadDetailData(fields: requestCriteria, selectedStocks: myDefault.map { $0.tke }.joined(separator: "~"))
+        loadDetailData(fields: requestCriteria, selectedStocks: myDefault.map { $0.tke }.joined(separator: "~"), onSuccess: onSuccess, onError: onError)
     }
     
-    private func loadDetailData(fields: String, selectedStocks: String) {
-        guard let url = URL(string: "https://sui7963dq6.execute-api.eu-central-1.amazonaws.com/default/ForeksMobileInterview?fields=las,\(fields)&stcs=\(selectedStocks)") else {
-            //self.showAlertView(title: "Error!", message: "Something went wrong...", alertActions: [])
-            return
-        }
-        
-        let resource = Resource<ListDetail>(url: url)
-        
-        WebService().fetchData(resource: resource) { result in
+    private func loadDetailData(fields: String, selectedStocks: String, onSuccess: @escaping ()->(), onError: @escaping (_ errorDescription: String)->()) {
+        webservice.loadDetailData(fields: fields, selectedStocks: selectedStocks) { result in
             switch result {
             case .success(let data):
-                DispatchQueue.main.async { [weak self] in
-                    guard let self = self else { return }
-                    
-                    self.compareResponseValues(datasL: data.l) {
-                        self.detailModel = data.l
-                    }
-                    
-                    self.tableView.reloadData {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                            self.loadDefaultData()
-                            print(self.cellImageTypes)
-                        }
-                    }
+                self.compareResponseValues(datasL: data.l) {
+                    self.detailModel = data.l
                 }
+                onSuccess()
             case .failure(let error):
-                DispatchQueue.main.async {  [weak self] in
-                    guard let self = self else { return }
-                    //self.showAlertView(title: "Error!", message: error.rawValue, alertActions: [])
-                }
+                onError(error.rawValue)
             }
         }
     }
@@ -123,7 +91,6 @@ final class MainViewModel {
         completion()
     }
     
-    
     private func formatValues(value: String?) -> Float {
            guard let value = value else { return 0.0 }
            
@@ -134,5 +101,60 @@ final class MainViewModel {
            formatter.allowsFloats = true
            guard let number = formatter.number(from: value)?.floatValue else { return 0.0}
            return number
-       }
+    }
+}
+
+extension MainViewModel {
+    
+    var defaultListCount: Int {
+        return myDefault.count
+    }
+    
+    var cellImagesCount: Int {
+        return cellImageTypes.count
+    }
+    
+    var listDetailCount: Int {
+        return detailModel.count
+    }
+    
+    func cellForRow(at index: Int) -> MypageDefault {
+        return myDefault[index]
+    }
+    
+    func cellImageType(at index: Int) -> String {
+        return cellImageTypes[index].cellImageType ?? ""
+    }
+    
+    func isCloChanged(at index: Int) -> Bool {
+        return isChanged[index]
+    }
+    
+    func cellForCod(at index: Int) -> String {
+        return myDefault[index].cod
+    }
+    
+    func cellForClo(at index: Int) -> String {
+        return detailModel[index].clo ?? ""
+    }
+    
+    func cellForLas(at index: Int) -> String {
+        return detailModel[index].las ?? ""
+    }
+    
+    func cellForPdd(at index: Int) -> String {
+        return detailModel[index].pdd ?? ""
+    }
+    
+    func cellForDdi(at index: Int) -> String {
+        return detailModel[index].ddi ?? ""
+    }
+    
+    func cellForLow(at index: Int) -> String {
+        return detailModel[index].low ?? ""
+    }
+    
+    func cellForHig(at index: Int) -> String {
+        return detailModel[index].hig ?? ""
+    }
 }

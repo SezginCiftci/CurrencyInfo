@@ -120,14 +120,17 @@ class CriteriaViewController: UIViewController {
                          paddingLeft: 20,
                          paddingBottom: 20,
                          paddingRight: 20)
-        
-//        let gesture = UITapGestureRecognizer(target: self, action: #selector(dismissView))
-//        view.addGestureRecognizer(gesture)
     }
     
-    @objc func dismissView() {
-        dismiss(animated: true)
+    override func touchesBegan(_ touches: Set<UITouch>, with event: UIEvent?) {
+        super.touchesBegan(touches, with: event)
+        let touch = touches.first
+        guard let location = touch?.location(in: self.view) else { return }
+        if !containerView.frame.contains(location) {
+            dismiss(animated: true)
+        }
     }
+    
 }
 
 //MARK: - UITableView Delegate Methods
@@ -148,7 +151,7 @@ extension CriteriaViewController: UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if let cell = tableView.cellForRow(at: indexPath) as? CriteriaTableCell {
             delegate?.didSelectCriteria(criteria: cell.handleCriteria(at: indexPath.row), openedWith: openedCriteriaWith)
-            dismissView()
+            dismiss(animated: true)
         }
     }
 }

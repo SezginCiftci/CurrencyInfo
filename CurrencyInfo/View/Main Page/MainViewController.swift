@@ -7,23 +7,6 @@
 
 import UIKit
 
-enum CellImageType {
-    case Up
-    case Down
-    case Nothing
-    
-    var cellImageType: UIImage? {
-        switch self {
-        case .Up:
-            return UIImage(named: "up")
-        case .Down:
-            return UIImage(named: "down")
-        case .Nothing:
-            return nil
-        }
-    }
-}
-
 class MainViewController: UIViewController {
 
     private var tableView: UITableView = {
@@ -35,125 +18,35 @@ class MainViewController: UIViewController {
         return table
     }()
     
-    private var myDefault = [MypageDefault]()
-    private var myPage = [Mypage]()
-    private var detailModel = [L]()
-    private var cellImageTypes = [CellImageType]()
-    private var isChanged = [Bool]()
-    
-    private var currentCriteriaFirst = CriteriaValue.Son
-    private var currentCriteriaSecond = CriteriaValue.FarkYuzde
+    private var currentCriteriaFirst: CriteriaValue = .Son
+    private var currentCriteriaSecond: CriteriaValue = .FarkYuzde
+    private var viewModel = MainViewModel()
     
     //MARK: - UIViewController Life Cycle Methods
     override func viewDidLoad() {
         super.viewDidLoad()
         configureUI()
-        loadDefaultData()
+        loadData()
     }
     
-    //MARK: - Data Loading Methods
-    private func loadDefaultData() {
-        guard let url = URL(string: "https://sui7963dq6.execute-api.eu-central-1.amazonaws.com/default/ForeksMobileInterviewSettings") else { return }
-        
-        let resource = Resource<DefaultList>(url: url)
-        print("İstek atıldı...")
-        WebService().fetchData(resource: resource) { result in
-            switch result {
-            case .success(let data):
-                DispatchQueue.main.async { [weak self] in
-                    guard let self = self else { return }
-                    self.myDefault = data.mypageDefaults
-                    self.myPage = data.mypage
-                    self.handleDetailRequest(criteria: self.currentCriteriaFirst, self.currentCriteriaSecond)
-                }
-            case .failure(let error):
-                DispatchQueue.main.async {  [weak self] in
-                    guard let self = self else { return }
-                    self.showAlertView(title: "Error!", message: error.rawValue, alertActions: [])
-                }
-            }
-        }
-    }
-    
-    private func handleDetailRequest(criteria: CriteriaValue...) {
-        let requestCriteria = criteria.map { $0.criteriaValue ?? "" }.joined(separator: ",")
-        print("Seçili kriterler: \(requestCriteria)")
-        loadDetailData(fields: requestCriteria, selectedStocks: myDefault.map { $0.tke }.joined(separator: "~"))
-    }
-    
-    private func loadDetailData(fields: String, selectedStocks: String) {
-        guard let url = URL(string: "https://sui7963dq6.execute-api.eu-central-1.amazonaws.com/default/ForeksMobileInterview?fields=las,\(fields)&stcs=\(selectedStocks)") else {
-            self.showAlertView(title: "Error!", message: "Something went wrong...", alertActions: [])
-            return
-        }
-        
-        let resource = Resource<ListDetail>(url: url)
-        
-        WebService().fetchData(resource: resource) { result in
-            switch result {
-            case .success(let data):
-                DispatchQueue.main.async { [weak self] in
-                    guard let self = self else { return }
-                    
-                    self.compareResponseValues(datasL: data.l) {
-                        self.detailModel = data.l
-                    }
-                    
-                    self.tableView.reloadData {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
-                            self.loadDefaultData()
-                            print(self.cellImageTypes)
-                        }
+    //MARK: - Data Loading
+    private func loadData() {
+        viewModel.loadListData(criteria: (currentCriteriaFirst, currentCriteriaSecond)) {
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.tableView.reloadData {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                        self.loadData()
                     }
                 }
-            case .failure(let error):
-                DispatchQueue.main.async {  [weak self] in
-                    guard let self = self else { return }
-                    self.showAlertView(title: "Error!", message: error.rawValue, alertActions: [])
-                }
+            }
+        } onError: { errorDescription in
+            DispatchQueue.main.async { [weak self] in
+                guard let self = self else { return }
+                self.showAlertView(title: "Error!", message: errorDescription, alertActions: [])
             }
         }
     }
-    
-    //MARK: - Data Compare
-    private func compareResponseValues(datasL: [L], completion: () -> ()) {
-        cellImageTypes.removeAll()
-        isChanged.removeAll()
-        if !detailModel.isEmpty {
-            for (index, dataL) in datasL.enumerated() {
-                let oldData = formatValues(value: dataL.las)
-                let newData = formatValues(value: detailModel[index].las)
-                    
-                if oldData == newData {
-                    cellImageTypes.append(.Nothing)
-                } else if oldData < newData {
-                    cellImageTypes.append(.Up)
-                } else {
-                    cellImageTypes.append(.Down)
-                }
-                
-                if (dataL.clo ?? "00:00:00" ) == detailModel[index].clo {
-                    isChanged.append(false)
-                } else {
-                    isChanged.append(true)
-                }
-            }
-        }
-        completion()
-    }
-    
-    
-    private func formatValues(value: String?) -> Float {
-           guard let value = value else { return 0.0 }
-           
-           let formatter = NumberFormatter()
-           formatter.numberStyle = .decimal
-           formatter.decimalSeparator = ","
-           formatter.groupingSeparator = "."
-           formatter.allowsFloats = true
-           guard let number = formatter.number(from: value)?.floatValue else { return 0.0}
-           return number
-       }
     
     //MARK: - UI Configurations
     private func configureUI() {
@@ -224,20 +117,21 @@ extension MainViewController: UITableViewDelegate, UITableViewDataSource {
     }
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        return myDefault.count
+        return viewModel.defaultListCount
     }
     
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: String(describing: MainTableCell.self), for: indexPath) as? MainTableCell
         guard let cell = cell else { return UITableViewCell() }
         
-        cell.currencyTitle.text = myDefault[indexPath.row].cod
-        if !cellImageTypes.isEmpty {
-            cell.directionImageView.image = cellImageTypes[indexPath.row].cellImageType
-            isChanged[indexPath.row] ? cell.animateCellClo(cell.currencySubtitle) : nil //sadece saat değişince
+        cell.currencyTitle.text = viewModel.cellForCod(at: indexPath.row)
+        if viewModel.cellImagesCount > 0 {
+            cell.directionImageView.image = UIImage(named: viewModel.cellImageType(at: indexPath.row))
+            viewModel.isCloChanged(at: indexPath.row) ? cell.animateCellClo(cell.currencySubtitle) : nil
         }
-        if !detailModel.isEmpty {
-            cell.currencySubtitle.text = detailModel[indexPath.row].clo
+        
+        if viewModel.listDetailCount > 0 {
+            cell.currencySubtitle.text = viewModel.cellForClo(at: indexPath.row)
             cell.secondLabel.attributedText = returnCriteriaType(at: indexPath.row, with: currentCriteriaFirst)
             cell.firstLabel.attributedText = returnCriteriaType(at: indexPath.row, with: currentCriteriaSecond)
         }
@@ -257,20 +151,15 @@ extension MainViewController: UITableViewDelegate, UITableViewDataSource {
         ]
         switch criteria {
         case .Son:
-            let criteriaStr = detailModel[index].las ?? ""
-            return NSAttributedString(string: criteriaStr, attributes: regularAttribute)
+            return NSAttributedString(string: viewModel.cellForLas(at: index), attributes: regularAttribute)
         case .FarkYuzde:
-            let criteriaStr = detailModel[index].pdd ?? ""
-            return NSAttributedString(string: "%\(criteriaStr)", attributes: criteriaStr.contains("-") ? negativeAttribute : positiveAttribute)
+            return NSAttributedString(string: "%\(viewModel.cellForPdd(at: index))", attributes: viewModel.cellForLas(at: index).contains("-") ? negativeAttribute : positiveAttribute)
         case .Fark:
-            let criteriaStr = detailModel[index].ddi ?? ""
-            return NSAttributedString(string: criteriaStr, attributes: criteriaStr.contains("-") ? negativeAttribute : positiveAttribute)
+            return NSAttributedString(string: "\(viewModel.cellForDdi(at: index))", attributes: viewModel.cellForDdi(at: index).contains("-") ? negativeAttribute : positiveAttribute)
         case .Dusuk:
-            let criteriaStr = detailModel[index].low ?? ""
-            return NSAttributedString(string: criteriaStr, attributes: regularAttribute)
+            return NSAttributedString(string: viewModel.cellForLow(at: index), attributes: regularAttribute)
         case .Yuksek:
-            let criteriaStr = detailModel[index].hig ?? ""
-            return NSAttributedString(string: criteriaStr, attributes: regularAttribute)
+            return NSAttributedString(string: viewModel.cellForHig(at: index), attributes: regularAttribute)
         }
     }
 }
