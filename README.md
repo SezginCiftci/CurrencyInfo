@@ -2,4 +2,4 @@
 
 <img src="https://github.com/SezginCiftci/CurrencyInfo/blob/main/Currency.gif" width="250">
 
-##### * UIKit <br/> * JSON Parsing 
+##### * UIKit <br/> * JSON Parsing <br/> * Constant Requests <br/> * Network Layer <br/> * MVVM 
